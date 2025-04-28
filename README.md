@@ -1,9 +1,5 @@
 # 🚀 CodeWave - Real-Time Collaborative Code Editor
 
-<p align="center">
-  <img src="https://img.shields.io/badge/CodeWave-Real-Time-Collaboration-blueviolet?style=for-the-badge&logo=codeforces&logoColor=white" alt="CodeWave Logo">
-</p>
-
 ---
 
 ## 📖 Overview
@@ -81,4 +77,4 @@ See the [LICENSE](./LICENSE) file for more information.
 
 ---
 
-> Made with ❤️ by Shaikh Faiz Faheem Ahmad and Pratik Ajay Gawad
+> Made by Shaikh Faiz Faheem Ahmad and Pratik Ajay Gawad
