@@ -1,7 +1,5 @@
 # 🚀 CodeWave - Real-Time Collaborative Code Editor
 
----
-
 ## 📖 Overview
 **CodeWave** is a real-time collaborative code editor that allows multiple users to write and edit code together live.  
 Built using modern web technologies, it delivers seamless collaboration with fast, real-time updates.
