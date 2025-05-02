@@ -1,5 +1,5 @@
 const ACTIONS = {
-    // Existing actions
+    // Existing room actions
     JOIN: 'join',
     JOINED: 'joined',
     DISCONNECTED: 'disconnected',
