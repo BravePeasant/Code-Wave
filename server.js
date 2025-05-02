@@ -1,254 +1,210 @@
 const express = require('express');
-const http = require('http');
-const path = require('path');
-const { Server } = require('socket.io');
-const { v4: uuidv4 } = require('uuid');
-const ACTIONS = require('./src/Actions');
-
-// Configuration
-const CONFIG = {
-    PORT: process.env.PORT || 5000,
-    STATIC_DIR: 'build'
-};
-
-// App setup
 const app = express();
+const http = require('http');
+const { Server } = require('socket.io');
+const path = require('path');
+const ACTIONS = require('./src/Actions');
+const { v4: uuidv4 } = require('uuid');
+
 const server = http.createServer(app);
 const io = new Server(server);
 
-// Middleware
-app.use(express.static(CONFIG.STATIC_DIR));
-app.use((req, res) => {
-    res.sendFile(path.join(__dirname, CONFIG.STATIC_DIR, 'index.html'));
+app.use(express.static('build'));
+app.use((req, res, next) => {
+    res.sendFile(path.join(__dirname, 'build', 'index.html'));
 });
 
-// Room and User management
-const userSocketMap = new Map();
-const roomFilesMap = new Map();
+const userSocketMap = {};
+const getAllConnectedClients = (roomId) => {
+    // Map of socketId to username
+    return Array.from(io.sockets.adapter.rooms.get(roomId) || []).map(
+        (socketId) => {
+            return {
+                socketId,
+                username: userSocketMap[socketId],
+            };
+        }
+    );
+};
 
-function getDefaultFile(fileId = uuidv4()) {
-    return {
-        id: fileId,
-        name: 'index.js',
-        content: '// Write your code here...',
-        language: 'javascript',
-        createdAt: Date.now(),
-        updatedAt: Date.now()
-    };
-}
+// Map to store room data, including files
+const roomsData = new Map();
 
-function initializeRoomFiles(roomId) {
-    if (!roomFilesMap.has(roomId)) {
-        const defaultFile = getDefaultFile();
-        roomFilesMap.set(roomId, {
-            files: [defaultFile],
-            activeFile: defaultFile.id
-        });
-    }
-    return roomFilesMap.get(roomId);
-}
-
-function getFilesForRoom(roomId) {
-    return initializeRoomFiles(roomId).files;
-}
-
-function getActiveFileId(roomId) {
-    return initializeRoomFiles(roomId).activeFile;
-}
-
-function getFileById(roomId, fileId) {
-    const files = getFilesForRoom(roomId);
-    return files.find(file => file.id === fileId);
-}
-
-function createFile(roomId, filename, language) {
-    const roomData = initializeRoomFiles(roomId);
-    const newFile = {
-        id: uuidv4(),
-        name: filename,
-        content: '',
-        language: language || 'javascript',
-        createdAt: Date.now(),
-        updatedAt: Date.now()
-    };
-    
-    roomData.files.push(newFile);
-    return newFile;
-}
-
-function deleteFile(roomId, fileId) {
-    const roomData = initializeRoomFiles(roomId);
-    const fileIndex = roomData.files.findIndex(file => file.id === fileId);
-    
-    if (fileIndex === -1) return null;
-    
-    // Don't delete the last file
-    if (roomData.files.length === 1) return null;
-    
-    const deletedFile = roomData.files.splice(fileIndex, 1)[0];
-    
-    // If we deleted the active file, set another file as active
-    if (roomData.activeFile === fileId) {
-        roomData.activeFile = roomData.files[0].id;
-    }
-    
-    return deletedFile;
-}
-
-function renameFile(roomId, fileId, newName) {
-    const file = getFileById(roomId, fileId);
-    if (!file) return null;
-    
-    file.name = newName;
-    file.updatedAt = Date.now();
-    return file;
-}
-
-function updateFileContent(roomId, fileId, content) {
-    const file = getFileById(roomId, fileId);
-    if (!file) return null;
-    
-    file.content = content;
-    file.updatedAt = Date.now();
-    return file;
-}
-
-function switchActiveFile(roomId, fileId) {
-    const roomData = initializeRoomFiles(roomId);
-    const file = getFileById(roomId, fileId);
-    
-    if (!file) return null;
-    
-    roomData.activeFile = fileId;
-    return file;
-}
-
-function getAllConnectedClients(roomId) {
-    try {
-        const clients = Array.from(io.sockets.adapter.rooms.get(roomId) || []);
-        return clients.map((socketId) => ({
-            socketId,
-            username: userSocketMap.get(socketId)
-        }));
-    } catch (error) {
-        console.error('Error getting connected clients:', error);
-        return [];
-    }
-}
-
-// Socket event handlers
-function handleJoin(socket, { roomId, username }) {
-    userSocketMap.set(socket.id, username);
-    socket.join(roomId);
-    
-    // Initialize room with default file if not exists
-    initializeRoomFiles(roomId);
-    
-    const clients = getAllConnectedClients(roomId);
-    const files = getFilesForRoom(roomId);
-    const activeFileId = getActiveFileId(roomId);
-    
-    // Notify all clients in the room that a new user joined
-    clients.forEach(({ socketId }) => {
-        io.to(socketId).emit(ACTIONS.JOINED, {
-            clients,
-            username,
-            socketId: socket.id,
-        });
-    });
-    
-    // Send the list of files to the new user
-    socket.emit(ACTIONS.FILES_SYNCED, {
-        files,
-        activeFileId
-    });
-}
-
-function handleDisconnect(socket) {
-    const rooms = [...socket.rooms];
-    rooms.forEach((roomId) => {
-        socket.in(roomId).emit(ACTIONS.DISCONNECTED, {
-            socketId: socket.id,
-            username: userSocketMap.get(socket.id),
-        });
-    });
-    userSocketMap.delete(socket.id);
-    socket.leave();
-}
-
-// Socket.io events
 io.on('connection', (socket) => {
-    console.log('Socket connected:', socket.id);
+    console.log('socket connected', socket.id);
 
-    socket.on(ACTIONS.JOIN, (data) => handleJoin(socket, data));
-    
-    socket.on(ACTIONS.CODE_CHANGE, ({ roomId, fileId, code }) => {
-        updateFileContent(roomId, fileId, code);
-        socket.in(roomId).emit(ACTIONS.CODE_CHANGE, { fileId, code });
-    });
-
-    socket.on(ACTIONS.SYNC_CODE, ({ socketId, fileId, code }) => {
-        io.to(socketId).emit(ACTIONS.CODE_CHANGE, { fileId, code });
-    });
-    
-    socket.on(ACTIONS.CREATE_FILE, ({ roomId, filename, language }) => {
-        const newFile = createFile(roomId, filename, language);
-        io.in(roomId).emit(ACTIONS.FILE_CREATED, { file: newFile });
-    });
-    
-    socket.on(ACTIONS.DELETE_FILE, ({ roomId, fileId }) => {
-        const deletedFile = deleteFile(roomId, fileId);
-        if (deletedFile) {
-            const activeFileId = getActiveFileId(roomId);
-            io.in(roomId).emit(ACTIONS.FILE_DELETED, { 
-                fileId, 
-                activeFileId 
+    socket.on(ACTIONS.JOIN, ({ roomId, username }) => {
+        userSocketMap[socket.id] = username;
+        socket.join(roomId);
+        
+        // Initialize room data if it doesn't exist
+        if (!roomsData.has(roomId)) {
+            roomsData.set(roomId, {
+                roomId,
+                files: [{
+                    id: uuidv4(),
+                    name: 'index.js',
+                    content: '// Start coding here...',
+                    language: 'javascript',
+                    createdAt: Date.now(),
+                    updatedAt: Date.now()
+                }],
+                activeUsers: []
             });
         }
-    });
-    
-    socket.on(ACTIONS.RENAME_FILE, ({ roomId, fileId, newName }) => {
-        const updatedFile = renameFile(roomId, fileId, newName);
-        if (updatedFile) {
-            io.in(roomId).emit(ACTIONS.FILE_RENAMED, { 
-                fileId, 
-                newName 
+        
+        const roomData = roomsData.get(roomId);
+        roomData.activeUsers = getAllConnectedClients(roomId);
+        roomsData.set(roomId, roomData);
+        
+        const clients = getAllConnectedClients(roomId);
+        clients.forEach(({ socketId }) => {
+            io.to(socketId).emit(ACTIONS.JOINED, {
+                clients,
+                username,
+                socketId: socket.id,
+                files: roomData.files
             });
-        }
-    });
-    
-    socket.on(ACTIONS.SWITCH_FILE, ({ roomId, fileId }) => {
-        const file = switchActiveFile(roomId, fileId);
-        if (file) {
-            socket.emit(ACTIONS.FILE_SWITCHED, { 
-                fileId, 
-                content: file.content 
-            });
-        }
-    });
-    
-    socket.on(ACTIONS.SYNC_FILES, ({ roomId, socketId }) => {
-        const files = getFilesForRoom(roomId);
-        const activeFileId = getActiveFileId(roomId);
-        io.to(socketId).emit(ACTIONS.FILES_SYNCED, { 
-            files, 
-            activeFileId 
         });
     });
 
-    socket.on('disconnecting', () => handleDisconnect(socket));
+    socket.on(ACTIONS.CODE_CHANGE, ({ roomId, fileId, code }) => {
+        if (!roomsData.has(roomId)) return;
+        
+        const roomData = roomsData.get(roomId);
+        const fileIndex = roomData.files.findIndex(file => file.id === fileId);
+        
+        if (fileIndex !== -1) {
+            roomData.files[fileIndex].content = code;
+            roomData.files[fileIndex].updatedAt = Date.now();
+            roomsData.set(roomId, roomData);
+            
+            socket.in(roomId).emit(ACTIONS.CODE_CHANGE, { 
+                fileId, 
+                code 
+            });
+        }
+    });
+
+    socket.on(ACTIONS.SYNC_CODE, ({ roomId, fileId, socketId }) => {
+        if (!roomsData.has(roomId)) return;
+        
+        const roomData = roomsData.get(roomId);
+        const file = roomData.files.find(file => file.id === fileId);
+        
+        if (file) {
+            io.to(socketId).emit(ACTIONS.CODE_CHANGE, { 
+                fileId, 
+                code: file.content 
+            });
+        }
+    });
+
+    // Handle file creation
+    socket.on(ACTIONS.CREATE_FILE, ({ roomId, fileName, language, username }) => {
+        if (!roomsData.has(roomId)) return;
+        
+        const roomData = roomsData.get(roomId);
+        const newFile = {
+            id: uuidv4(),
+            name: fileName,
+            content: '',
+            language: language || 'javascript',
+            createdAt: Date.now(),
+            updatedAt: Date.now()
+        };
+        
+        roomData.files.push(newFile);
+        roomsData.set(roomId, roomData);
+        
+        io.in(roomId).emit(ACTIONS.FILE_CREATED, {
+            file: newFile,
+            username
+        });
+    });
+
+    // Handle file deletion
+    socket.on(ACTIONS.DELETE_FILE, ({ roomId, fileId, username }) => {
+        if (!roomsData.has(roomId)) return;
+        
+        const roomData = roomsData.get(roomId);
+        roomData.files = roomData.files.filter(file => file.id !== fileId);
+        roomsData.set(roomId, roomData);
+        
+        io.in(roomId).emit(ACTIONS.FILE_DELETED, {
+            fileId,
+            username
+        });
+    });
+
+    // Handle file renaming
+    socket.on(ACTIONS.RENAME_FILE, ({ roomId, fileId, newName, username }) => {
+        if (!roomsData.has(roomId)) return;
+        
+        const roomData = roomsData.get(roomId);
+        const fileIndex = roomData.files.findIndex(file => file.id === fileId);
+        
+        if (fileIndex !== -1) {
+            roomData.files[fileIndex].name = newName;
+            roomData.files[fileIndex].updatedAt = Date.now();
+            roomsData.set(roomId, roomData);
+            
+            io.in(roomId).emit(ACTIONS.FILE_RENAMED, {
+                fileId,
+                newName,
+                username
+            });
+        }
+    });
+
+    // Handle file switching (optional - mainly for notifications)
+    socket.on(ACTIONS.SWITCH_FILE, ({ roomId, fileId, username }) => {
+        io.in(roomId).emit(ACTIONS.FILE_SWITCHED, {
+            fileId,
+            username
+        });
+    });
+
+    // Sync all files for a room
+    socket.on(ACTIONS.SYNC_FILES, ({ roomId }) => {
+        if (!roomsData.has(roomId)) return;
+        
+        const roomData = roomsData.get(roomId);
+        socket.emit(ACTIONS.FILES_SYNCED, {
+            files: roomData.files
+        });
+    });
+
+    // Handle disconnection
+    socket.on('disconnecting', () => {
+        const rooms = [...socket.rooms];
+        rooms.forEach((roomId) => {
+            socket.in(roomId).emit(ACTIONS.DISCONNECTED, {
+                socketId: socket.id,
+                username: userSocketMap[socket.id],
+            });
+            
+            // Update room data if it exists
+            if (roomsData.has(roomId)) {
+                const roomData = roomsData.get(roomId);
+                roomData.activeUsers = roomData.activeUsers.filter(
+                    user => user.socketId !== socket.id
+                );
+                
+                // If room is empty, we could clean up
+                if (roomData.activeUsers.length === 0) {
+                    // Optionally remove room data after some time
+                    // For now, we'll keep it for persistence
+                    // roomsData.delete(roomId);
+                } else {
+                    roomsData.set(roomId, roomData);
+                }
+            }
+        });
+        
+        delete userSocketMap[socket.id];
+    });
 });
 
-// Server startup
-server.listen(CONFIG.PORT, () => {
-    console.log(`Server running on port ${CONFIG.PORT}`);
-});
-
-// Error handling
-process.on('uncaughtException', (error) => {
-    console.error('Uncaught Exception:', error);
-});
-
-process.on('unhandledRejection', (error) => {
-    console.error('Unhandled Rejection:', error);
-});
+const PORT = process.env.PORT || 5000;
+server.listen(PORT, () => console.log(`Listening on port ${PORT}...`));
