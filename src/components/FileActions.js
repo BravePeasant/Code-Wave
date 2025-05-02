@@ -1,107 +1,76 @@
 import React, { useState } from 'react';
-import toast from 'react-hot-toast';
-import ACTIONS from '../Actions';
 
-const FileActions = ({ socketRef, roomId }) => {
-    const [showNewFileForm, setShowNewFileForm] = useState(false);
-    const [newFileName, setNewFileName] = useState('');
-    const [fileType, setFileType] = useState('javascript');
-    
-    // File type options with their extensions
-    const fileTypes = [
-        { value: 'javascript', label: 'JavaScript', extension: '.js' },
-        { value: 'html', label: 'HTML', extension: '.html' },
-        { value: 'css', label: 'CSS', extension: '.css' },
-        { value: 'json', label: 'JSON', extension: '.json' },
-        { value: 'markdown', label: 'Markdown', extension: '.md' }
-    ];
-    
-    // Handler to create a new file
-    const handleCreateFile = () => {
-        if (newFileName.trim() === '') {
-            toast.error('File name cannot be empty');
-            return;
-        }
+const FileActions = ({ onCreateFile }) => {
+    const [showForm, setShowForm] = useState(false);
+    const [fileName, setFileName] = useState('');
+    const [language, setLanguage] = useState('javascript');
+
+    const handleCreateFile = (e) => {
+        e.preventDefault();
         
-        // Get selected file type
-        const selectedType = fileTypes.find(type => type.value === fileType);
-        
-        // Add extension if not already present
-        let filename = newFileName;
-        if (!filename.includes('.')) {
-            filename += selectedType.extension;
-        }
-        
-        if (socketRef.current) {
-            socketRef.current.emit(ACTIONS.CREATE_FILE, {
-                roomId,
-                filename,
-                language: fileType
-            });
-            
-            toast.success(`Created new file: ${filename}`);
-            setNewFileName('');
-            setShowNewFileForm(false);
+        if (fileName.trim()) {
+            onCreateFile(fileName.trim(), language);
+            resetForm();
         }
     };
-    
-    // Cancel new file creation
-    const cancelNewFile = () => {
-        setShowNewFileForm(false);
-        setNewFileName('');
+
+    const resetForm = () => {
+        setFileName('');
+        setLanguage('javascript');
+        setShowForm(false);
     };
-    
+
     return (
-        <div className="file-actions">
-            {showNewFileForm ? (
-                <div className="new-file-form">
+        <div className="fileActions">
+            {!showForm ? (
+                <button 
+                    className="addFileBtn" 
+                    onClick={() => setShowForm(true)}
+                >
+                    + New File
+                </button>
+            ) : (
+                <form className="addFileForm" onSubmit={handleCreateFile}>
                     <input
                         type="text"
-                        placeholder="Enter file name"
-                        value={newFileName}
-                        onChange={(e) => setNewFileName(e.target.value)}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter') handleCreateFile();
-                            if (e.key === 'Escape') cancelNewFile();
-                        }}
+                        className="addFileInput"
+                        placeholder="File name"
+                        value={fileName}
+                        onChange={(e) => setFileName(e.target.value)}
                         autoFocus
-                        className="inputBox"
                     />
-                    
-                    <select 
-                        value={fileType}
-                        onChange={(e) => setFileType(e.target.value)}
-                        className="inputBox"
-                    >
-                        {fileTypes.map(type => (
-                            <option key={type.value} value={type.value}>
-                                {type.label}
-                            </option>
-                        ))}
-                    </select>
-                    
-                    <div className="file-form-actions">
-                        <button 
-                            onClick={handleCreateFile}
-                            className="btn actionBtn"
+                    <div className="addFileFormRow">
+                        <select
+                            className="languageSelect"
+                            value={language}
+                            onChange={(e) => setLanguage(e.target.value)}
                         >
+                            <option value="javascript">JavaScript</option>
+                            <option value="css">CSS</option>
+                            <option value="html">HTML</option>
+                            <option value="typescript">TypeScript</option>
+                            <option value="python">Python</option>
+                            <option value="java">Java</option>
+                            <option value="markdown">Markdown</option>
+                            <option value="text">Plain Text</option>
+                        </select>
+                    </div>
+                    <div className="addFileFormRow">
+                        <button type="submit" className="addFileBtn">
                             Create
                         </button>
+                    </div>
+                    <div className="addFileFormRow">
                         <button 
-                            onClick={cancelNewFile}
-                            className="btn leaveBtn"
+                            type="button" 
+                            className="addFileBtn" 
+                            style={{ background: '#444' }}
+                            onClick={resetForm}
                         >
                             Cancel
                         </button>
                     </div>
-                </div>
-            ) : (
-                <button 
-                    onClick={() => setShowNewFileForm(true)}
-                    className="btn actionBtn new-file-btn"
-                >
-                    + New File
-                </button>
+                </form>
             )}
         </div>
     );
