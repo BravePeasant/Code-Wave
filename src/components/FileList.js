@@ -1,142 +1,112 @@
 import React, { useState } from 'react';
-import toast from 'react-hot-toast';
-import ACTIONS from '../Actions';
 
-const FileList = ({ files, activeFileId, socketRef, roomId }) => {
-    const [editingFileId, setEditingFileId] = useState(null);
+const FileList = ({ files, activeFileId, onSwitchFile, onRenameFile, onDeleteFile }) => {
+    const [showRenameModal, setShowRenameModal] = useState(false);
+    const [fileToRename, setFileToRename] = useState(null);
     const [newFileName, setNewFileName] = useState('');
-    
-    // Handler to switch to a different file
-    const handleFileClick = (fileId) => {
-        if (socketRef.current) {
-            socketRef.current.emit(ACTIONS.SWITCH_FILE, {
-                roomId,
-                fileId
-            });
-        }
+
+    const handleRenameClick = (e, file) => {
+        e.stopPropagation(); // Prevent file switching when clicking rename
+        setFileToRename(file);
+        setNewFileName(file.name);
+        setShowRenameModal(true);
     };
-    
-    // Handler to start renaming a file
-    const startRenaming = (fileId, currentName) => {
-        setEditingFileId(fileId);
-        setNewFileName(currentName);
-    };
-    
-    // Handler to save renamed file
-    const saveFileName = (fileId) => {
-        if (newFileName.trim() === '') {
-            toast.error('File name cannot be empty');
-            return;
-        }
-        
-        if (socketRef.current) {
-            socketRef.current.emit(ACTIONS.RENAME_FILE, {
-                roomId,
-                fileId,
-                newName: newFileName
-            });
-        }
-        
-        setEditingFileId(null);
-        setNewFileName('');
-    };
-    
-    // Handler to delete a file
-    const handleDeleteFile = (fileId) => {
-        if (files.length <= 1) {
-            toast.error('Cannot delete the only file in the project');
-            return;
-        }
-        
+
+    const handleDeleteClick = (e, fileId) => {
+        e.stopPropagation(); // Prevent file switching when clicking delete
         if (window.confirm('Are you sure you want to delete this file?')) {
-            if (socketRef.current) {
-                socketRef.current.emit(ACTIONS.DELETE_FILE, {
-                    roomId,
-                    fileId
-                });
-            }
+            onDeleteFile(fileId);
         }
     };
-    
-    // Get file icon based on file extension
-    const getFileIcon = (fileName) => {
-        const extension = fileName.split('.').pop().toLowerCase();
-        
-        switch (extension) {
-            case 'js':
-            case 'jsx':
-                return '📄 JS';
-            case 'html':
-                return '📄 HTML';
+
+    const handleRenameSubmit = (e) => {
+        e.preventDefault();
+        if (newFileName.trim() && fileToRename) {
+            onRenameFile(fileToRename.id, newFileName.trim());
+            setShowRenameModal(false);
+        }
+    };
+
+    const closeRenameModal = () => {
+        setShowRenameModal(false);
+        setFileToRename(null);
+    };
+
+    const getFileIcon = (language) => {
+        switch (language) {
+            case 'javascript':
+                return 'JS';
             case 'css':
-                return '📄 CSS';
-            case 'json':
-                return '📄 JSON';
-            case 'md':
-                return '📄 MD';
+                return 'CSS';
+            case 'html':
+                return 'HTML';
             default:
-                return '📄';
+                return 'TXT';
         }
     };
-    
+
     return (
-        <div className="file-list">
-            <h3>Files</h3>
-            <ul className="files">
-                {files.map((file) => (
-                    <li 
-                        key={file.id} 
-                        className={`file-item ${file.id === activeFileId ? 'active' : ''}`}
+        <div className="fileList">
+            {files.length === 0 ? (
+                <div className="noFiles">No files available</div>
+            ) : (
+                files.map((file) => (
+                    <div
+                        key={file.id}
+                        className={`fileItem ${file.id === activeFileId ? 'active' : ''}`}
+                        onClick={() => onSwitchFile(file.id)}
                     >
-                        {editingFileId === file.id ? (
-                            <div className="file-rename">
-                                <input
-                                    type="text"
-                                    value={newFileName}
-                                    onChange={(e) => setNewFileName(e.target.value)}
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter') saveFileName(file.id);
-                                        if (e.key === 'Escape') setEditingFileId(null);
-                                    }}
-                                    autoFocus
-                                />
-                                <button 
-                                    onClick={() => saveFileName(file.id)}
-                                    className="btn btn-sm"
-                                >
+                        <div className="fileName">
+                            <span className="fileIcon">{getFileIcon(file.language)}</span> {file.name}
+                        </div>
+                        <div className="fileActions">
+                            <button
+                                className="fileActionBtn"
+                                onClick={(e) => handleRenameClick(e, file)}
+                                title="Rename file"
+                            >
+                                ✏️
+                            </button>
+                            <button
+                                className="fileActionBtn"
+                                onClick={(e) => handleDeleteClick(e, file.id)}
+                                title="Delete file"
+                            >
+                                🗑️
+                            </button>
+                        </div>
+                    </div>
+                ))
+            )}
+
+            {/* Rename File Modal */}
+            {showRenameModal && (
+                <div className="renameFileModal">
+                    <div className="renameFileContent">
+                        <div className="renameFileHeader">
+                            <h3 className="renameFileTitle">Rename File</h3>
+                            <button className="renameFileClose" onClick={closeRenameModal}>×</button>
+                        </div>
+                        <form onSubmit={handleRenameSubmit}>
+                            <input
+                                type="text"
+                                className="renameFileInput"
+                                value={newFileName}
+                                onChange={(e) => setNewFileName(e.target.value)}
+                                autoFocus
+                            />
+                            <div className="renameFileButtons">
+                                <button type="button" className="renameFileCancel" onClick={closeRenameModal}>
+                                    Cancel
+                                </button>
+                                <button type="submit" className="renameFileSave">
                                     Save
                                 </button>
                             </div>
-                        ) : (
-                            <div className="file-info">
-                                <span 
-                                    className="file-name"
-                                    onClick={() => handleFileClick(file.id)}
-                                >
-                                    <span className="file-icon">{getFileIcon(file.name)}</span>
-                                    {file.name}
-                                </span>
-                                <div className="file-actions">
-                                    <button 
-                                        className="btn-icon"
-                                        onClick={() => startRenaming(file.id, file.name)}
-                                        aria-label="Rename file"
-                                    >
-                                        ✏️
-                                    </button>
-                                    <button 
-                                        className="btn-icon"
-                                        onClick={() => handleDeleteFile(file.id)}
-                                        aria-label="Delete file"
-                                    >
-                                        🗑️
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-                    </li>
-                ))}
-            </ul>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
