@@ -1,157 +1,274 @@
 import React, { useState, useRef, useEffect } from 'react';
 import toast from 'react-hot-toast';
-import { useLocation, useNavigate, Navigate, useParams } from 'react-router-dom';
-import ACTIONS from '../Actions';
 import Client from '../components/Client';
 import Editor from '../components/Editor';
+import FileList from '../components/FileList';
+import FileActions from '../components/FileActions';
 import { initSocket } from '../socket';
-
-// Constants
-const TOAST_CONFIG = {
-    success: { duration: 2000 },
-    error: { duration: 3000 }
-};
+import {
+    useLocation,
+    useNavigate,
+    useParams,
+    Navigate,
+} from 'react-router-dom';
+import ACTIONS from '../Actions';
 
 const EditorPage = () => {
-    // Refs
     const socketRef = useRef(null);
     const codeRef = useRef(null);
-    
-    // Hooks
     const location = useLocation();
     const { roomId } = useParams();
     const reactNavigator = useNavigate();
-    
-    // State
     const [clients, setClients] = useState([]);
-    const [socketError, setSocketError] = useState(null);
+    const [files, setFiles] = useState([]);
+    const [activeFileId, setActiveFileId] = useState(null);
 
-    // Socket Event Handlers
-    const handleJoined = ({ clients: updatedClients, username: joinedUsername, socketId }) => {
-        if (joinedUsername !== location.state?.username) {
-            toast.success(`${joinedUsername} joined the room.`, TOAST_CONFIG.success);
-        }
-        setClients(updatedClients);
-        
-        if (socketRef.current.id !== socketId) {
-            socketRef.current.emit(ACTIONS.SYNC_CODE, {
-                code: codeRef.current,
-                socketId,
-            });
-        }
-    };
-
-    const handleDisconnected = ({ socketId, username: leftUsername }) => {
-        toast.error(`${leftUsername} left the room.`, TOAST_CONFIG.error);
-        setClients(prev => prev.filter(client => client.socketId !== socketId));
-    };
-
-    const handleErrors = (e, context = 'Socket Error') => {
-        console.error(context, e);
-        const message = e.message || 'Socket connection failed, please try again later.';
-        setSocketError(message);
-        toast.error(message, TOAST_CONFIG.error);
-    };
-
-    // Socket Initialization
     useEffect(() => {
-        let isMounted = true;
+        const init = async () => {
+            socketRef.current = await initSocket();
+            socketRef.current.on('connect_error', (err) => handleErrors(err));
+            socketRef.current.on('connect_failed', (err) => handleErrors(err));
 
-        const initializeSocket = async () => {
-            try {
-                socketRef.current = await initSocket();
+            function handleErrors(e) {
+                console.log('socket error', e);
+                toast.error('Socket connection failed, try again later.');
+                reactNavigator('/');
+            }
 
-                // Error handlers
-                socketRef.current.on('connect_error', err => handleErrors(err, 'Connection Error'));
-                socketRef.current.on('connect_failed', err => handleErrors(err, 'Connection Failed'));
-                socketRef.current.on('disconnect', reason => {
-                    if (isMounted) {
-                        console.log('Socket disconnected:', reason);
+            socketRef.current.emit(ACTIONS.JOIN, {
+                roomId,
+                username: location.state?.username,
+            });
+
+            // Listening for joined event
+            socketRef.current.on(
+                ACTIONS.JOINED,
+                ({ clients, username, socketId, files }) => {
+                    if (username !== location.state?.username) {
+                        toast.success(`${username} joined the room.`);
                     }
-                });
+                    setClients(clients);
+                    
+                    // Initialize files from server
+                    setFiles(files);
+                    if (files.length > 0 && !activeFileId) {
+                        setActiveFileId(files[0].id);
+                    }
+                }
+            );
 
-                // Room events
-                socketRef.current.emit(ACTIONS.JOIN, {
-                    roomId,
-                    username: location.state?.username,
-                });
+            // Listening for disconnected
+            socketRef.current.on(
+                ACTIONS.DISCONNECTED,
+                ({ socketId, username }) => {
+                    toast.success(`${username} left the room.`);
+                    setClients((prev) => {
+                        return prev.filter(
+                            (client) => client.socketId !== socketId
+                        );
+                    });
+                }
+            );
 
-                socketRef.current.on(ACTIONS.JOINED, handleJoined);
-                socketRef.current.on(ACTIONS.DISCONNECTED, handleDisconnected);
+            // File created event
+            socketRef.current.on(
+                ACTIONS.FILE_CREATED,
+                ({ file, username }) => {
+                    toast.success(`${username} created a new file: ${file.name}`);
+                    setFiles((prev) => [...prev, file]);
+                    
+                    // If this is the first file, set it as active
+                    if (files.length === 0) {
+                        setActiveFileId(file.id);
+                    }
+                }
+            );
 
-            } catch (err) {
-                handleErrors(err, 'Initialization Failed');
-            }
+            // File deleted event
+            socketRef.current.on(
+                ACTIONS.FILE_DELETED,
+                ({ fileId, username }) => {
+                    toast.success(`${username} deleted a file`);
+                    setFiles((prev) => prev.filter(file => file.id !== fileId));
+                    
+                    // If active file was deleted, switch to another file
+                    if (activeFileId === fileId) {
+                        const remainingFiles = files.filter(file => file.id !== fileId);
+                        if (remainingFiles.length > 0) {
+                            setActiveFileId(remainingFiles[0].id);
+                        } else {
+                            setActiveFileId(null);
+                        }
+                    }
+                }
+            );
+
+            // File renamed event
+            socketRef.current.on(
+                ACTIONS.FILE_RENAMED,
+                ({ fileId, newName, username }) => {
+                    toast.success(`${username} renamed a file to ${newName}`);
+                    setFiles((prev) => 
+                        prev.map(file => 
+                            file.id === fileId 
+                                ? { ...file, name: newName }
+                                : file
+                        )
+                    );
+                }
+            );
+
+            // File switched event - not needed for local state changes
+            socketRef.current.on(
+                ACTIONS.FILE_SWITCHED,
+                ({ fileId, username }) => {
+                    // This is optional - you could show a toast when someone switches files
+                    if (username !== location.state?.username) {
+                        const fileName = files.find(f => f.id === fileId)?.name || 'unknown';
+                        toast.info(`${username} is now viewing ${fileName}`);
+                    }
+                }
+            );
+
+            // Sync files with server
+            socketRef.current.on(
+                ACTIONS.FILES_SYNCED,
+                ({ files }) => {
+                    setFiles(files);
+                    if (files.length > 0 && !activeFileId) {
+                        setActiveFileId(files[0].id);
+                    }
+                }
+            );
         };
-
-        initializeSocket();
-
+        init();
         return () => {
-            isMounted = false;
-            if (socketRef.current) {
-                socketRef.current.disconnect();
-                ['connect_error', 'connect_failed', 'disconnect', ACTIONS.JOINED, ACTIONS.DISCONNECTED]
-                    .forEach(event => socketRef.current.off(event));
-            }
+            socketRef.current?.disconnect();
+            socketRef.current?.off(ACTIONS.JOINED);
+            socketRef.current?.off(ACTIONS.DISCONNECTED);
+            socketRef.current?.off(ACTIONS.FILE_CREATED);
+            socketRef.current?.off(ACTIONS.FILE_DELETED);
+            socketRef.current?.off(ACTIONS.FILE_RENAMED);
+            socketRef.current?.off(ACTIONS.FILE_SWITCHED);
+            socketRef.current?.off(ACTIONS.FILES_SYNCED);
         };
-    }, [location.state?.username, roomId]);
+    }, []);
 
-    // Utility Functions
-    const copyRoomId = async () => {
+    async function copyRoomId() {
         try {
             await navigator.clipboard.writeText(roomId);
-            toast.success('Room ID copied to clipboard', TOAST_CONFIG.success);
+            toast.success('Room ID has been copied to your clipboard');
         } catch (err) {
-            toast.error('Failed to copy Room ID', TOAST_CONFIG.error);
-            console.error('Clipboard copy error:', err);
+            toast.error('Could not copy the Room ID');
+            console.error(err);
         }
+    }
+
+    function leaveRoom() {
+        reactNavigator('/');
+    }
+
+    // File management functions
+    const createNewFile = (fileName, language) => {
+        socketRef.current.emit(ACTIONS.CREATE_FILE, {
+            roomId,
+            fileName,
+            language,
+            username: location.state?.username,
+        });
     };
 
-    const leaveRoom = () => reactNavigator('/');
+    const deleteFile = (fileId) => {
+        socketRef.current.emit(ACTIONS.DELETE_FILE, {
+            roomId,
+            fileId,
+            username: location.state?.username,
+        });
+    };
 
-    // Guards
-    if (!location.state?.username) {
-        return <Navigate to="/" replace />;
+    const renameFile = (fileId, newName) => {
+        socketRef.current.emit(ACTIONS.RENAME_FILE, {
+            roomId,
+            fileId,
+            newName,
+            username: location.state?.username,
+        });
+    };
+
+    const switchFile = (fileId) => {
+        setActiveFileId(fileId);
+        socketRef.current.emit(ACTIONS.SWITCH_FILE, {
+            roomId,
+            fileId,
+            username: location.state?.username,
+        });
+    };
+
+    // Get the active file
+    const activeFile = files.find(file => file.id === activeFileId) || null;
+
+    if (!location.state) {
+        return <Navigate to="/" />;
     }
 
-    if (socketError) {
-        return (
-            <div className="errorOverlay">
-                <h2>Connection Error</h2>
-                <p>{socketError}</p>
-                <button onClick={() => window.location.reload()} className="btn">Try Again</button>
-                <button onClick={() => reactNavigator('/')} className="btn leaveBtn">Go Home</button>
-            </div>
-        );
-    }
-
-    // Render
     return (
         <div className="mainWrap">
-            <aside className="aside">
+            <div className="aside">
                 <div className="asideInner">
                     <div className="logo">
-                        <img className="logoImage" src="/code-wave.png" alt="CodeWave Logo" />
+                        <img
+                            className="logoImage"
+                            src="/code-sync.png"
+                            alt="logo"
+                        />
                     </div>
-                    <h3>Connected Users</h3>
+                    <h3>Connected</h3>
                     <div className="clientsList">
-                        {clients.map(client => (
-                            <Client key={client.socketId} username={client.username} />
+                        {clients.map((client) => (
+                            <Client
+                                key={client.socketId}
+                                username={client.username}
+                            />
                         ))}
                     </div>
+                    
+                    <h3>Files</h3>
+                    <FileList 
+                        files={files}
+                        activeFileId={activeFileId}
+                        onSwitchFile={switchFile}
+                        onRenameFile={renameFile}
+                        onDeleteFile={deleteFile}
+                    />
+                    
+                    <FileActions 
+                        onCreateFile={createNewFile}
+                    />
                 </div>
-                <div className="asideButtons">
-                    <button className="btn copyBtn" onClick={copyRoomId}>Copy Room ID</button>
-                    <button className="btn leaveBtn" onClick={leaveRoom}>Leave Room</button>
-                </div>
-            </aside>
-            <main className="editorWrap">
-                <Editor
-                    socketRef={socketRef}
-                    roomId={roomId}
-                    onCodeChange={code => { codeRef.current = code; }}
-                />
-            </main>
+                <button className="btn copyBtn" onClick={copyRoomId}>
+                    Copy ROOM ID
+                </button>
+                <button className="btn leaveBtn" onClick={leaveRoom}>
+                    Leave
+                </button>
+            </div>
+            <div className="editorWrap">
+                {activeFile ? (
+                    <Editor
+                        socketRef={socketRef}
+                        roomId={roomId}
+                        onCodeChange={(code) => {
+                            codeRef.current = code;
+                        }}
+                        file={activeFile}
+                    />
+                ) : (
+                    <div className="noFileMessage">
+                        <h2>No files yet</h2>
+                        <p>Create a new file to get started</p>
+                    </div>
+                )}
+            </div>
         </div>
     );
 };
