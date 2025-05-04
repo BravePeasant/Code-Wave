@@ -1,6 +1,13 @@
 import React, { useState } from 'react';
 
-const FileList = ({ files, activeFileId, onSwitchFile, onRenameFile, onDeleteFile }) => {
+const FileList = ({ 
+    files, 
+    activeFileId, 
+    onSwitchFile, 
+    onRenameFile, 
+    onDeleteFile,
+    onDownloadFile 
+}) => {
     const [showRenameModal, setShowRenameModal] = useState(false);
     const [fileToRename, setFileToRename] = useState(null);
     const [newFileName, setNewFileName] = useState('');
@@ -16,6 +23,13 @@ const FileList = ({ files, activeFileId, onSwitchFile, onRenameFile, onDeleteFil
         e.stopPropagation(); // Prevent file switching when clicking delete
         if (window.confirm('Are you sure you want to delete this file?')) {
             onDeleteFile(fileId);
+        }
+    };
+    
+    const handleDownloadClick = (e, fileId) => {
+        e.stopPropagation(); // Prevent file switching when clicking download
+        if (onDownloadFile) {
+            onDownloadFile(fileId);
         }
     };
 
@@ -40,6 +54,14 @@ const FileList = ({ files, activeFileId, onSwitchFile, onRenameFile, onDeleteFil
                 return 'CSS';
             case 'html':
                 return 'HTML';
+            case 'typescript':
+                return 'TS';
+            case 'python':
+                return 'PY';
+            case 'java':
+                return 'JV';
+            case 'markdown':
+                return 'MD';
             default:
                 return 'TXT';
         }
@@ -60,6 +82,13 @@ const FileList = ({ files, activeFileId, onSwitchFile, onRenameFile, onDeleteFil
                             <span className="fileIcon">{getFileIcon(file.language)}</span> {file.name}
                         </div>
                         <div className="fileActions">
+                            <button
+                                className="fileActionBtn"
+                                onClick={(e) => handleDownloadClick(e, file.id)}
+                                title="Download file"
+                            >
+                                💾
+                            </button>
                             <button
                                 className="fileActionBtn"
                                 onClick={(e) => handleRenameClick(e, file)}

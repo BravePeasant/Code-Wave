@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { v4 as uuidV4 } from 'uuid';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
@@ -10,7 +10,7 @@ const PATHS = {
 };
 
 const MESSAGES = {
-    ROOM_CREATED: 'Created a new room',
+    ROOM_CREATED: 'New room created successfully!',
     VALIDATION_ERROR: 'Room ID and Username are required.',
 };
 
@@ -21,6 +21,8 @@ const Home = () => {
         roomId: '',
         username: '',
     });
+    const [isCreating, setIsCreating] = useState(false);
+    const [isJoining, setIsJoining] = useState(false);
 
     // Handlers
     const handleInputChange = (e) => {
@@ -33,9 +35,21 @@ const Home = () => {
 
     const createNewRoom = (e) => {
         e.preventDefault();
-        const id = uuidV4();
-        setFormData(prev => ({ ...prev, roomId: id }));
-        toast.success(MESSAGES.ROOM_CREATED);
+        setIsCreating(true);
+        
+        // Simulate a slight delay for animation
+        setTimeout(() => {
+            const id = uuidV4();
+            setFormData(prev => ({ ...prev, roomId: id }));
+            toast.success(MESSAGES.ROOM_CREATED, {
+                style: {
+                    background: '#333',
+                    color: '#fff',
+                    borderRadius: '8px',
+                }
+            });
+            setIsCreating(false);
+        }, 600);
     };
 
     const handleJoinRoomSubmit = (e) => {
@@ -43,13 +57,24 @@ const Home = () => {
         const { roomId, username } = formData;
 
         if (!roomId || !username) {
-            toast.error(MESSAGES.VALIDATION_ERROR);
+            toast.error(MESSAGES.VALIDATION_ERROR, {
+                style: {
+                    background: '#333',
+                    color: '#fff',
+                    borderRadius: '8px',
+                }
+            });
             return;
         }
 
-        navigate(`${PATHS.EDITOR}/${roomId}`, {
-            state: { username },
-        });
+        setIsJoining(true);
+        
+        // Simulate a slight delay for animation
+        setTimeout(() => {
+            navigate(`${PATHS.EDITOR}/${roomId}`, {
+                state: { username },
+            });
+        }, 600);
     };
 
     // Component parts
@@ -72,6 +97,7 @@ const Home = () => {
                 placeholder="Room ID"
                 value={formData.roomId}
                 onChange={handleInputChange}
+                icon="🔑"
             />
 
             <InputField
@@ -80,10 +106,15 @@ const Home = () => {
                 placeholder="Username"
                 value={formData.username}
                 onChange={handleInputChange}
+                icon="👤"
             />
 
-            <button type="submit" className="btn joinBtn">
-                Join
+            <button 
+                type="submit" 
+                className={`btn joinBtn ${isJoining ? 'success' : ''}`}
+                disabled={isJoining}
+            >
+                {isJoining ? 'Joining...' : 'Join'}
             </button>
 
             <span className="createInfo">
@@ -92,8 +123,9 @@ const Home = () => {
                     type="button"
                     onClick={createNewRoom}
                     className="btn-link createNewBtn"
+                    disabled={isCreating}
                 >
-                    Create a new room
+                    {isCreating ? 'Creating...' : 'Create a new room'}
                 </button>
             </span>
         </form>
@@ -113,9 +145,10 @@ const Home = () => {
     );
 };
 
-// Helper component for input fields
-const InputField = ({ id, name, placeholder, value, onChange }) => (
-    <>
+// Helper component for input fields with icon
+const InputField = ({ id, name, placeholder, value, onChange, icon }) => (
+    <div className="inputFieldWrapper">
+        {icon && <span className="inputIcon">{icon}</span>}
         <label htmlFor={id} className="visually-hidden">
             {placeholder}
         </label>
@@ -129,7 +162,7 @@ const InputField = ({ id, name, placeholder, value, onChange }) => (
             onChange={onChange}
             required
         />
-    </>
+    </div>
 );
 
 export default Home;

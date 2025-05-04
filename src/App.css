@@ -1,359 +1,932 @@
-.homePageWrapper {
+/* Modern CSS Reset */
+*, *::before, *::after {
+    box-sizing: border-box;
+  }
+  
+  body {
+    margin: 0;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+      'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background-color: #0d0f12;
+    color: #e0e0e0;
+  }
+  
+  /* Home Page Styling */
+  .homePageWrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    background: linear-gradient(135deg, #0d0f12 0%, #17191c 100%);
+    position: relative;
+  }
+  
+  .formWrapper {
+    background: rgba(23, 25, 28, 0.8);
+    backdrop-filter: blur(10px);
+    padding: 40px;
+    border-radius: 16px;
+    width: 420px;
+    max-width: 90%;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  
+  .formWrapper:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+  }
+  
+  footer {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    padding: 20px;
+    text-align: center;
+    background: rgba(13, 15, 18, 0.7);
+    backdrop-filter: blur(5px);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+  }
+  
+  footer h4 {
+    margin: 0;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 14px;
+  }
+  
+  footer a {
+    color: #4aee88;
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+  
+  footer a:hover {
+    color: #2bd66a;
+    text-decoration: underline;
+  }
+  
+  .inputGroup {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 24px;
+  }
+  
+  .mainLabel {
+    margin-bottom: 24px;
+    margin-top: 0;
+    font-size: 22px;
+    font-weight: 600;
+    text-align: center;
+    background: linear-gradient(90deg, #4aee88, #2bd66a);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: 0.5px;
+  }
+  
+  .homePageLogo {
+    height: 90px;
+    margin-bottom: 32px;
+    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1));
+    animation: float 6s ease-in-out infinite;
+  }
+  
+  @keyframes float {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+    100% { transform: translateY(0px); }
+  }
+  
+  .visually-hidden {
+    border: 0;
+    clip: rect(0 0 0 0);
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    padding: 0;
+    position: absolute;
+    width: 1px;
+  }
+  
+  .inputFieldWrapper {
+    position: relative;
+    margin-bottom: 16px;
+  }
+  
+  .inputIcon {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 16px;
+  }
+  
+  .inputBox {
+    padding: 16px;
+    padding-left: 46px;
+    border-radius: 8px;
+    outline: none;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(45, 48, 56, 0.8);
+    font-size: 16px;
+    font-weight: 500;
+    color: #fff;
+    width: 100%;
+    transition: all 0.2s ease;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .inputBox:focus {
+    border-color: rgba(74, 237, 136, 0.5);
+    box-shadow: 0 0 0 2px rgba(74, 237, 136, 0.2);
+  }
+  
+  .inputBox::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+  }
+  
+  .btn {
+    border: none;
+    padding: 14px 20px;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    letter-spacing: 0.5px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .joinBtn,
+  .leaveBtn {
+    background: linear-gradient(90deg, #4aee88, #2bd66a);
+    color: #0d0f12;
+    width: 100%;
+    margin-left: auto;
+    box-shadow: 0 4px 12px rgba(74, 237, 136, 0.3);
+  }
+  
+  .joinBtn:hover,
+  .leaveBtn:hover {
+    background: linear-gradient(90deg, #3dd677, #25c05c);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(74, 237, 136, 0.4);
+  }
+  
+  .joinBtn:active,
+  .leaveBtn:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 8px rgba(74, 237, 136, 0.2);
+  }
+  
+  .createInfo {
+    margin: 24px 0 0;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 14px;
+  }
+  
+  .btn-link {
+    background: none;
+    border: none;
+    padding: 0;
+    font: inherit;
+    cursor: pointer;
+  }
+  
+  .createNewBtn {
+    color: #4aee88;
+    text-decoration: none;
+    position: relative;
+    font-weight: 600;
+    transition: all 0.2s ease;
+  }
+  
+  .createNewBtn:after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 1px;
+    bottom: -2px;
+    left: 0;
+    background-color: #4aee88;
+    transform: scaleX(0);
+    transform-origin: bottom right;
+    transition: transform 0.3s ease;
+  }
+  
+  .createNewBtn:hover {
+    color: #2bd66a;
+  }
+  
+  .createNewBtn:hover:after {
+    transform: scaleX(1);
+    transform-origin: bottom left;
+  }
+  
+  /* Editor Layout Styling */
+  .mainWrap {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    height: 100vh;
+    background: #0d0f12;
+  }
+  
+  .aside {
+    background: #17191C;
+    padding: 20px;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
+    box-shadow: 4px 0 16px rgba(0, 0, 0, 0.2);
+    z-index: 5;
+  }
+  
+  .asideInner {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    overflow-y: hidden;
+  }
+  
+  .logo {
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #fff;
-    height: 100vh;
-}
-
-.formWrapper {
-    background: #282a36;
-    padding: 20px;
-    border-radius: 10px;
-    width: 400px;
-    max-width: 90%;
-}
-
-footer {
-    position: fixed;
-    bottom: 0;
-}
-
-footer a {
-    color: #4aee88;
-}
-
-.inputGroup {
-    display: flex;
-    flex-direction: column;
+    padding-bottom: 20px;
     margin-bottom: 20px;
-}
-
-.mainLabel {
-    margin-bottom: 10px;
-    margin-top: 0;
-}
-
-.homePageLogo {
-    height: 80px;
-    margin-bottom: 30px;
-}
-
-.inputBox {
-    padding: 10px;
-    border-radius: 5px;
-    outline: none;
-    border: none;
-    background: #eee;
-    font-size: 16px;
-    font-weight: bold;
-}
-
-.btn {
-    border: none;
-    padding: 10px;
-    border-radius: 5px;
-    font-size: 16px;
-    font-weight: bold;
-    cursor: pointer;
-    transition: all 0.3s ease-in-out;
-}
-
-.joinBtn,
-.leaveBtn {
-    background: #4aed88;
-    width: 100px;
-    margin-left: auto;
-}
-
-.joinBtn:hover,
-.leaveBtn:hover {
-    background: #2b824c;
-}
-
-.createInfo {
-    margin: 0 auto;
-    margin-top: 20px;
-}
-
-.createNewBtn {
-    color: #4aed88;
-    text-decoration: none;
-    border-bottom: 1px solid #4aed88;
-    transition: all 0.3s ease-in-out;
-}
-
-.createNewBtn:hover,
-footer a:hover {
-    color: #368654;
-    border-color: #368654;
-}
-
-.mainWrap {
-    display: grid;
-    grid-template-columns: 230px 1fr;
-    height: 100vh;
-}
-
-.aside {
-    background: #1c1e29;
-    padding: 16px;
-    color: #fff;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .logoImage {
+    height: 50px;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+  }
+  
+  /* Tab Navigation */
+  .tabNavigation {
     display: flex;
-    flex-direction: column;
-}
-
-.asideInner {
+    margin-bottom: 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .tabButton {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.6);
+    padding: 12px 0;
+    font-size: 14px;
+    cursor: pointer;
+    flex: 1;
+    text-align: center;
+    transition: all 0.2s ease;
+    position: relative;
+    font-weight: 500;
+  }
+  
+  .tabButton:hover {
+    color: rgba(255, 255, 255, 0.9);
+  }
+  
+  .tabButton.active {
+    color: #4aee88;
+    font-weight: 600;
+  }
+  
+  .tabButton.active::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(90deg, #4aee88, #2bd66a);
+    border-radius: 2px 2px 0 0;
+  }
+  
+  .tabContent {
     flex: 1;
     overflow-y: auto;
-}
-
-.logo {
-    border-bottom: 1px solid #424242;
-    padding-bottom: 10px;
-}
-
-.logoImage {
-    height: 60px;
-}
-
-.clientsList {
+    padding-right: 4px;
     display: flex;
-    align-items: center;
+    flex-direction: column;
+  }
+  
+  /* Custom scrollbar */
+  .tabContent::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .tabContent::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 3px;
+  }
+  
+  .tabContent::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+  }
+  
+  .tabContent::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
+  
+  /* Client list */
+  .clientsList {
+    display: flex;
     flex-wrap: wrap;
-    gap: 20px;
-    margin-bottom: 20px;
-}
-
-.client {
+    gap: 16px;
+    margin-bottom: 24px;
+    padding: 16px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+  }
+  
+  .client {
     display: flex;
     align-items: center;
     flex-direction: column;
-    font-weight: bold;
-}
-
-.userName {
-    margin-top: 10px;
-}
-
-.logo {
-    border-bottom: 1px solid #424242;
-    padding-bottom: 10px;
-}
-
-.leaveBtn {
-    width: 100%;
-    margin-top: 20px;
-}
-
-.CodeMirror {
-    min-height: calc(100vh - 20px);
-    font-size: 16px;
-    line-height: 1.6;
-    padding-top: 20px;
-}
-
-.copyBtn {
-    background: #f3f3f3;
-    color: #1c1e29;
-    margin-top: 10px;
-    width: 100%;
-}
-
-.copyBtn:hover {
-    background: #d4d4d4;
-}
-
-/* File Management Styles */
-.fileList {
-    margin-bottom: 20px;
-    max-height: 200px;
+    font-weight: 500;
+  }
+  
+  .userName {
+    margin-top: 8px;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.8);
+  }
+  
+  /* Files Section */
+  .fileList {
+    flex: 1;
     overflow-y: auto;
-}
-
-.fileItem {
+    margin-bottom: 16px;
+  }
+  
+  .fileItem {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 8px;
+    padding: 10px 12px;
     cursor: pointer;
-    border-radius: 4px;
-    transition: background 0.2s;
-    margin-bottom: 5px;
-}
-
-.fileItem:hover {
-    background: #2d303e;
-}
-
-.fileItem.active {
-    background: #2d303e;
-    font-weight: bold;
-}
-
-.fileName {
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    margin-bottom: 4px;
+    border: 1px solid transparent;
+  }
+  
+  .fileItem:hover {
+    background: rgba(255, 255, 255, 0.05);
+  }
+  
+  .fileItem.active {
+    background: rgba(74, 237, 136, 0.1);
+    border: 1px solid rgba(74, 237, 136, 0.2);
+    font-weight: 600;
+  }
+  
+  .fileName {
     flex: 1;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-}
-
-.fileActions {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 14px;
+  }
+  
+  .fileItem.active .fileName {
+    color: #4aee88;
+  }
+  
+  .fileActions {
     display: flex;
     gap: 8px;
-}
-
-.fileActionBtn {
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+  
+  .fileItem:hover .fileActions {
+    opacity: 1;
+  }
+  
+  .fileActionBtn {
     background: none;
     border: none;
+    color: rgba(255, 255, 255, 0.6);
+    cursor: pointer;
+    font-size: 12px;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+  }
+  
+  .fileActionBtn:hover {
+    background: rgba(255, 255, 255, 0.1);
     color: #fff;
+  }
+  
+  /* Add File Section */
+  .addFileForm {
+    margin-top: 16px;
+    margin-bottom: 20px;
+    background: rgba(255, 255, 255, 0.03);
+    padding: 16px;
+    border-radius: 8px;
+  }
+  
+  .addFileInput {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 12px;
+    border-radius: 6px;
+    background: rgba(45, 48, 56, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #fff;
+    font-size: 14px;
+    transition: all 0.2s ease;
+  }
+  
+  .addFileInput:focus {
+    border-color: rgba(74, 237, 136, 0.5);
+    outline: none;
+  }
+  
+  .addFileInput::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+  }
+  
+  .addFileFormRow {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  
+  .languageSelect {
+    flex: 1;
+    background: rgba(45, 48, 56, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #fff;
+    padding: 12px;
+    border-radius: 6px;
+    font-size: 14px;
+    appearance: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .languageSelect:focus {
+    border-color: rgba(74, 237, 136, 0.5);
+    outline: none;
+  }
+  
+  .addFileBtn {
+    background: linear-gradient(90deg, #4aee88, #2bd66a);
+    color: #0d0f12;
+    border: none;
+    padding: 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    width: 100%;
+    font-size: 14px;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 6px rgba(74, 237, 136, 0.2);
+  }
+  
+  .addFileBtn:hover {
+    background: linear-gradient(90deg, #3dd677, #25c05c);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(74, 237, 136, 0.3);
+  }
+  
+  /* Connection Status */
+  .connectionStatus {
+    margin-top: 16px;
+    padding: 12px;
+    border-radius: 6px;
+    text-align: center;
+    font-size: 13px;
+    background: rgba(45, 48, 56, 0.5);
+    transition: all 0.3s ease;
+  }
+  
+  .connectionStatus.disconnected {
+    background-color: rgba(255, 107, 107, 0.1);
+    color: #ff6b6b;
+    border: 1px solid rgba(255, 107, 107, 0.2);
+  }
+  
+  .reconnectBtn {
+    background: #ff6b6b;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 4px;
+    margin-top: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+  }
+  
+  .reconnectBtn:hover {
+    background: #ff5252;
+    transform: translateY(-1px);
+  }
+  
+  /* Footer Actions */
+  .sidebarFooter {
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+  }
+  
+  .leaveBtn {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: none;
+  }
+  
+  .leaveBtn:hover {
+    background: rgba(255, 255, 255, 0.12);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* File Save Options */
+  .fileSaveOptions {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .fileSaveBtn {
+    background: rgba(45, 48, 56, 0.8);
+    color: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 12px;
+    border-radius: 6px;
     cursor: pointer;
     font-size: 14px;
-    opacity: 0.7;
-    transition: opacity 0.2s;
-}
-
-.fileActionBtn:hover {
-    opacity: 1;
-}
-
-.addFileForm {
-    margin-top: 10px;
-    margin-bottom: 20px;
-}
-
-.addFileInput {
-    width: 100%;
-    padding: 8px;
-    margin-bottom: 8px;
-    border-radius: 4px;
-    background: #2d303e;
-    border: none;
-    color: #fff;
-}
-
-.addFileInput::placeholder {
-    color: #aaa;
-}
-
-.addFileFormRow {
+    transition: all 0.2s ease;
     display: flex;
+    align-items: center;
+    justify-content: center;
     gap: 8px;
-    margin-bottom: 8px;
-}
-
-.languageSelect {
+    font-weight: 500;
+  }
+  
+  .fileSaveBtn:hover {
+    background: rgba(58, 63, 80, 0.8);
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+  
+  /* Editor Styling */
+  .editorWrap {
     flex: 1;
-    background: #2d303e;
-    border: none;
-    color: #fff;
-    padding: 8px;
-    border-radius: 4px;
+    overflow: hidden;
+    height: 100%;
+    position: relative;
+    background: #0d0f12;
+  }
+  
+  .multiEditorContainer {
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .editorContainer {
+    height: 100%;
+  }
+  
+  /* CodeMirror Styling */
+.editorContainer .CodeMirror {
+    height: 100% !important;
+    font-size: 15px;
+    line-height: 1.6;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    padding: 20px 10px;
+    background: #0d0f12;
+    counter-reset: line-number; /* Reset line number counter */
 }
 
-.addFileBtn {
-    background: #4aed88;
-    color: #1c1e29;
-    border: none;
-    padding: 8px 15px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-weight: bold;
-    width: 100%;
+.CodeMirror-gutters {
+    background: #0d0f12 !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.05) !important;
 }
 
-.addFileBtn:hover {
-    background: #2b824c;
+.CodeMirror-linenumber {
+    color: rgba(255, 255, 255, 0.3) !important;
+    counter-increment: line-number; /* Increment line number counter */
+    content: counter(line-number); /* Display line number */
 }
-
-.noFileMessage {
+  
+  /* No File Message */
+  .noFileMessage {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     height: 100%;
-    color: #666;
-}
-
-.renameFileModal {
+    color: rgba(255, 255, 255, 0.5);
+    background-color: #0d0f12;
+    padding: 20px;
+    text-align: center;
+  }
+  
+  .noFileMessage h2 {
+    margin-bottom: 16px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.7);
+  }
+  
+  .noFileMessage p {
+    max-width: 500px;
+    line-height: 1.6;
+  }
+  
+  /* Tab bar styles */
+  .editorTabs {
+    display: flex;
+    background-color: #17191c;
+    overflow-x: auto;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+  }
+  
+  .editorTabs::-webkit-scrollbar {
+    height: 4px;
+  }
+  
+  .editorTabs::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .editorTabs::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+  }
+  
+  .editorTab {
+    padding: 10px 20px;
+    background-color: rgba(45, 47, 58, 0.4);
+    margin-right: 1px;
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+    cursor: pointer;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    transition: all 0.2s ease;
+    border-bottom: 2px solid transparent;
+  }
+  
+  .editorTab.active {
+    background-color: rgba(68, 71, 90, 0.4);
+    border-bottom: 2px solid #4aee88;
+  }
+  
+  .editorTab .fileName {
+    margin-right: 12px;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 13px;
+    font-weight: 500;
+  }
+  
+  .editorTab.active .fileName {
+    color: #4aee88;
+  }
+  
+  .editorTab .closeBtn {
+    border: none;
+    background: none;
+    color: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    font-size: 14px;
+    padding: 0;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+  }
+  
+  .editorTab .closeBtn:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #fff;
+  }
+  
+  /* Modal styling */
+  .renameFileModal {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.7);
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(5px);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 1000;
-}
-
-.renameFileContent {
-    background: #1c1e29;
-    padding: 20px;
-    border-radius: 5px;
-    width: 300px;
-}
-
-.renameFileHeader {
+    animation: fadeIn 0.2s ease;
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  
+  .renameFileContent {
+    background: #17191c;
+    padding: 24px;
+    border-radius: 12px;
+    width: 350px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    animation: slideUp 0.3s ease;
+  }
+  
+  @keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  
+  .renameFileHeader {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 15px;
-}
-
-.renameFileTitle {
+    margin-bottom: 20px;
+  }
+  
+  .renameFileTitle {
     margin: 0;
     font-size: 18px;
-}
-
-.renameFileClose {
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+  }
+  
+  .renameFileClose {
     background: none;
     border: none;
-    color: #fff;
+    color: rgba(255, 255, 255, 0.6);
     font-size: 18px;
     cursor: pointer;
-}
-
-.renameFileInput {
-    width: 100%;
-    padding: 8px;
-    margin-bottom: 15px;
-    border-radius: 4px;
-    background: #2d303e;
-    border: none;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+  }
+  
+  .renameFileClose:hover {
+    background: rgba(255, 255, 255, 0.1);
     color: #fff;
-}
-
-.renameFileButtons {
+  }
+  
+  .renameFileInput {
+    width: 100%;
+    padding: 14px;
+    margin-bottom: 20px;
+    border-radius: 8px;
+    background: rgba(45, 48, 56, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #fff;
+    font-size: 15px;
+    transition: all 0.2s ease;
+  }
+  
+  .renameFileInput:focus {
+    border-color: rgba(74, 237, 136, 0.5);
+    box-shadow: 0 0 0 2px rgba(74, 237, 136, 0.2);
+    outline: none;
+  }
+  
+  .renameFileButtons {
     display: flex;
     justify-content: flex-end;
-    gap: 10px;
-}
-
-.renameFileSave {
-    background: #4aed88;
-    color: #1c1e29;
+    gap: 12px;
+  }
+  
+  .renameFileSave {
+    background: linear-gradient(90deg, #4aee88, #2bd66a);
+    color: #0d0f12;
     border: none;
-    padding: 8px 15px;
-    border-radius: 4px;
+    padding: 10px 20px;
+    border-radius: 6px;
     cursor: pointer;
-    font-weight: bold;
-}
+    font-weight: 600;
+    transition: all 0.2s ease;
+  }
+  
+  .renameFileCancel {
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s ease;
+  }
+  
+  .renameFileSave:hover {
+    background: linear-gradient(90deg, #3dd677, #25c05c);
+    transform: translateY(-1px);
+  }
+  
+  .renameFileCancel:hover {
+    background: rgba(255, 255, 255, 0.12);
+  }
+  
+  /* Copy Button */
+  .copyBtn {
+    background: rgba(45, 48, 56, 0.8);
+    color: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    margin-top: 16px;
+    width: 100%;
+    padding: 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  
+  .copyBtn:hover {
+    background: rgba(58, 63, 80, 0.8);
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+  
+  /* Success animation for actions */
+  @keyframes success {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+  }
+  
+  .success {
+    animation: success 0.3s ease;
+  }
 
-.renameFileCancel {
-    background: #444;
-    color: #fff;
+  /* Add these CSS styles to your App.css file */
+
+.fileActionsContainer {
+    margin-top: 16px;
+    margin-bottom: 20px;
+    width: 100%;
+  }
+  
+  .fileActionsContainer .addFileBtn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    background: linear-gradient(90deg, #4aee88, #2bd66a);
+    color: #0d0f12;
     border: none;
-    padding: 8px 15px;
-    border-radius: 4px;
+    padding: 12px;
+    border-radius: 6px;
     cursor: pointer;
-}
-
-.renameFileSave:hover {
-    background: #2b824c;
-}
-
-.renameFileCancel:hover {
-    background: #333;
-}
+    font-size: 14px;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 6px rgba(74, 237, 136, 0.2);
+  }
+  
+  .fileActionsContainer .addFileBtn:hover {
+    background: linear-gradient(90deg, #3dd677, #25c05c);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(74, 237, 136, 0.3);
+  }

@@ -21,7 +21,7 @@ const FileActions = ({ onCreateFile }) => {
     };
 
     return (
-        <div className="fileActions">
+        <div className="fileActionsContainer">
             {!showForm ? (
                 <button 
                     className="addFileBtn" 

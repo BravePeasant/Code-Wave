@@ -5,10 +5,12 @@ const { Server } = require('socket.io');
 const path = require('path');
 const ACTIONS = require('./src/Actions');
 const { v4: uuidv4 } = require('uuid');
+const cors = require('cors');
 
 const server = http.createServer(app);
 const io = new Server(server);
 
+app.use(cors());
 app.use(express.static('build'));
 app.use((req, res, next) => {
     res.sendFile(path.join(__dirname, 'build', 'index.html'));
@@ -69,7 +71,7 @@ io.on('connection', (socket) => {
     });
 
     socket.on(ACTIONS.CODE_CHANGE, ({ roomId, fileId, code }) => {
-        if (!roomsData.has(roomId)) return;
+        if (!roomsData.has(roomId) || !fileId) return;
         
         const roomData = roomsData.get(roomId);
         const fileIndex = roomData.files.findIndex(file => file.id === fileId);
@@ -79,6 +81,7 @@ io.on('connection', (socket) => {
             roomData.files[fileIndex].updatedAt = Date.now();
             roomsData.set(roomId, roomData);
             
+            // Broadcast to other clients in the room
             socket.in(roomId).emit(ACTIONS.CODE_CHANGE, { 
                 fileId, 
                 code 
@@ -86,14 +89,16 @@ io.on('connection', (socket) => {
         }
     });
 
+    // Sync code for a specific file
     socket.on(ACTIONS.SYNC_CODE, ({ roomId, fileId, socketId }) => {
-        if (!roomsData.has(roomId)) return;
+        if (!roomsData.has(roomId) || !fileId) return;
         
         const roomData = roomsData.get(roomId);
         const file = roomData.files.find(file => file.id === fileId);
         
         if (file) {
-            io.to(socketId).emit(ACTIONS.CODE_CHANGE, { 
+            // Send the synced code directly to the requesting client
+            io.to(socketId).emit(ACTIONS.CODE_SYNCED, { 
                 fileId, 
                 code: file.content 
             });
@@ -125,7 +130,7 @@ io.on('connection', (socket) => {
 
     // Handle file deletion
     socket.on(ACTIONS.DELETE_FILE, ({ roomId, fileId, username }) => {
-        if (!roomsData.has(roomId)) return;
+        if (!roomsData.has(roomId) || !fileId) return;
         
         const roomData = roomsData.get(roomId);
         roomData.files = roomData.files.filter(file => file.id !== fileId);
@@ -139,7 +144,7 @@ io.on('connection', (socket) => {
 
     // Handle file renaming
     socket.on(ACTIONS.RENAME_FILE, ({ roomId, fileId, newName, username }) => {
-        if (!roomsData.has(roomId)) return;
+        if (!roomsData.has(roomId) || !fileId) return;
         
         const roomData = roomsData.get(roomId);
         const fileIndex = roomData.files.findIndex(file => file.id === fileId);
@@ -159,6 +164,8 @@ io.on('connection', (socket) => {
 
     // Handle file switching (optional - mainly for notifications)
     socket.on(ACTIONS.SWITCH_FILE, ({ roomId, fileId, username }) => {
+        if (!fileId) return;
+        
         io.in(roomId).emit(ACTIONS.FILE_SWITCHED, {
             fileId,
             username
@@ -192,13 +199,8 @@ io.on('connection', (socket) => {
                 );
                 
                 // If room is empty, we could clean up
-                if (roomData.activeUsers.length === 0) {
-                    // Optionally remove room data after some time
-                    // For now, we'll keep it for persistence
-                    // roomsData.delete(roomId);
-                } else {
-                    roomsData.set(roomId, roomData);
-                }
+                // For now, we'll keep it for persistence
+                roomsData.set(roomId, roomData);
             }
         });
         

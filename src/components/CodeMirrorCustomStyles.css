@@ -1,0 +1,21 @@
+/* Custom CodeMirror styles to position cursor after line numbers */
+.CodeMirror-sizer {
+  margin-left: 40px !important;  /* Makes space for line numbers */
+}
+
+.CodeMirror-linenumber {
+  width: 30px !important;  /* Width of the line number gutter */
+  text-align: right;
+  padding: 0 8px 0 5px;  /* Adjust padding so numbers are properly aligned */
+}
+
+.CodeMirror-gutters {
+  border-right: 1px solid #4b5563;  /* Add a subtle border for better visual separation */
+  background-color: #282a36;  /* Match the dracula theme background */
+}
+
+/* Add some padding to improve text visibility */
+.CodeMirror {
+  padding-top: 8px;
+  padding-bottom: 8px;
+}

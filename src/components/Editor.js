@@ -12,9 +12,9 @@ import 'codemirror/addon/edit/closetag';
 import 'codemirror/addon/edit/closebrackets';
 import ACTIONS from '../Actions';
 
-const Editor = ({ socketRef, roomId, onCodeChange, file }) => {
+const Editor = ({ socketRef, roomId, onCodeChange, file, socketConnected }) => {
     const editorRef = useRef(null);
-    const codeEditorRef = useRef(null);
+    const activeFileIdRef = useRef(null);
 
     useEffect(() => {
         async function init() {
@@ -30,23 +30,24 @@ const Editor = ({ socketRef, roomId, onCodeChange, file }) => {
                     }
                 );
 
+                // Set initial content
+                editorRef.current.setValue(file.content || '');
+                activeFileIdRef.current = file.id;
+
                 editorRef.current.on('change', (instance, changes) => {
                     const { origin } = changes;
                     const code = instance.getValue();
                     onCodeChange(code);
-                    if (origin !== 'setValue') {
+                    
+                    // Only emit changes if they're from user input and socket is connected
+                    if (origin !== 'setValue' && socketRef.current && socketConnected) {
                         socketRef.current.emit(ACTIONS.CODE_CHANGE, {
                             roomId,
-                            fileId: file.id,
+                            fileId: activeFileIdRef.current,
                             code,
                         });
                     }
                 });
-
-                codeEditorRef.current = {
-                    fileId: file.id,
-                    instance: editorRef.current
-                };
             }
         }
         init();
@@ -56,53 +57,49 @@ const Editor = ({ socketRef, roomId, onCodeChange, file }) => {
                 editorRef.current.toTextArea();
                 editorRef.current = null;
             }
-            codeEditorRef.current = null;
         };
     }, []);
 
+    // Listen for external code changes
     useEffect(() => {
-        if (socketRef.current) {
-            socketRef.current.on(ACTIONS.CODE_CHANGE, ({ fileId, code }) => {
-                if (fileId === file.id && editorRef.current) {
-                    // Only update if this change is for the current active file
-                    editorRef.current.setValue(code);
-                }
-            });
-
-            return () => {
-                socketRef.current.off(ACTIONS.CODE_CHANGE);
-            };
-        }
-    }, [socketRef.current, file.id]);
-
-    useEffect(() => {
-        // Handle file switching - update editor content and mode when file changes
-        if (editorRef.current) {
-            // If we have a new file or a different file than before
-            if (!codeEditorRef.current || codeEditorRef.current.fileId !== file.id) {
-                // Set new file content
-                editorRef.current.setValue(file.content || '');
-                // Update mode based on file language
-                editorRef.current.setOption('mode', getCodeMirrorMode(file.language));
-                
-                // Request code from server in case it's not up to date
-                socketRef.current.emit(ACTIONS.SYNC_CODE, {
-                    roomId,
-                    fileId: file.id,
-                    socketId: socketRef.current.id,
-                });
-
-                // Update reference to track current file
-                if (codeEditorRef.current) {
-                    codeEditorRef.current.fileId = file.id;
-                } else {
-                    codeEditorRef.current = { fileId: file.id, instance: editorRef.current };
-                }
+        if (!socketRef.current) return;
+        
+        const handleCodeChange = ({ fileId, code }) => {
+            // Only update if this change is for the currently displayed file
+            if (fileId === activeFileIdRef.current && editorRef.current) {
+                editorRef.current.setValue(code);
             }
+        };
+        
+        socketRef.current.on(ACTIONS.CODE_CHANGE, handleCodeChange);
+        
+        return () => {
+            socketRef.current.off(ACTIONS.CODE_CHANGE, handleCodeChange);
+        };
+    }, [socketRef.current]);
+
+    // Handle file switching
+    useEffect(() => {
+        if (!editorRef.current) return;
+        
+        // Update the active file reference
+        activeFileIdRef.current = file.id;
+        
+        // Update editor content and mode
+        editorRef.current.setValue(file.content || '');
+        editorRef.current.setOption('mode', getCodeMirrorMode(file.language));
+        
+        // Request latest code from server
+        if (socketRef.current && socketConnected) {
+            socketRef.current.emit(ACTIONS.SYNC_CODE, {
+                roomId,
+                fileId: file.id,
+                socketId: socketRef.current.id,
+            });
         }
     }, [file.id, file.language]);
 
-    // Helper function to get the appropriate CodeMirror mode based on file language
+    // Helper function to get the appropriate CodeMirror mode
     const getCodeMirrorMode = (language) => {
         switch (language) {
             case 'javascript':
